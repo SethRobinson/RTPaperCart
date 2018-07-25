@@ -32,6 +32,8 @@ target_sources(RTPaperCart PUBLIC ${APP}/ConsoleManager.cpp)
 target_sources(RTPaperCart PUBLIC ${PROTON_MANAGER}/QRGenerateManager.cpp ${PROTON_UTIL}/QR-Code-generator/cpp/BitBuffer.cpp ${PROTON_UTIL}/QR-Code-generator/cpp/QrCode.cpp ${PROTON_UTIL}/QR-Code-generator/cpp/QrSegment.cpp)
 
 
-target_link_libraries(RTPaperCart opencv_core opencv_imgproc opencv_video opencv_videoio opencv_highgui opencv_imgcodecs)
+#if OpenCV is required...
+#target_link_libraries(RTPaperCart opencv_core opencv_imgproc opencv_video opencv_videoio opencv_highgui opencv_imgcodecs)
+
 target_link_libraries(RTPaperCart zbar raspicam mmal mmal_core mmal_util)
 target_link_libraries(RTPaperCart)
