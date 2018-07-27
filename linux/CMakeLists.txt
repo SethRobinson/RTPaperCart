@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
+ENABLE_LANGUAGE(C)
+
 include(CheckIncludeFile)
 CHECK_INCLUDE_FILE(/opt/vc/include/bcm_host.h ISRASPBERRYPIE)
 
