@@ -1,6 +1,8 @@
 #include "PlatformPrecomp.h"
 #include "ConsoleManager.h"
+#include "Manager/QRGenerateManager.h"
 #include "App.h"
+#include "Entity/EntityUtils.h"
 
 string RunLinuxShell(string command);
 
@@ -10,7 +12,8 @@ ConsoleManager::ConsoleManager()
 	m_loadedRomHash = 0;
 	m_mode = APP_MODE_RUNNING;
 	m_multiPartHash = 0;
-	m_removeMessageTimer = 0;
+	m_pauseCapture = false;
+	m_bAllowRenderingToScreen = true;
 
 }
 
@@ -18,44 +21,108 @@ ConsoleManager::~ConsoleManager()
 {
 }
 
+
+	
+//just a thing to let me schedule calling things.  This should all really be in a component, whatever
+void HandleInstruction(VariantList *pVList)
+{
+	string command = pVList->Get(0).GetString();
+
+	LogMsg("Got static call: %s", command.c_str());
+	if (command == "stop_capture")
+	{
+		GetApp()->GetConsoleManager()->m_pauseCapture = true;
+	}
+	if (command == "start_capture")
+	{
+		GetApp()->GetConsoleManager()->m_pauseCapture = false;
+	}
+
+	if (command == "run")
+	{
+		//m_mode = APP_MODE_RUNNING;
+		string ret = RunLinuxShell("nohup /opt/retropie/supplementary/runcommand/runcommand.sh 0 _SYS_ atari2600 /home/pi/proton/RTPaperCart/bin/decoded_rom.a26 &");
+		LogMsg(ret.c_str());
+	}
+
+	if (command == "stop_render")
+	{
+		GetApp()->GetConsoleManager()->m_bAllowRenderingToScreen = false;
+	}
+	if (command == "start_render")
+	{
+		GetApp()->GetConsoleManager()->m_bAllowRenderingToScreen = true;
+	}
+	
+
+}
+
+void ConsoleManager::ScheduleCommand(string command, int delayBeforeActionMS)
+{
+	VariantList vList;
+	vList.Get(0).Set(command);
+	GetMessageManager()->CallStaticFunction(HandleInstruction, delayBeforeActionMS, &vList);
+}
+
 bool ConsoleManager::Init()
 {
 
+	//to test stuff
+	/*
+	LogMsg("testing");
+	QRGenerateManager qr;
+	unsigned int leng;
+	char *pCrap = (char*)LoadFileIntoMemoryBasic("alice.txt", &leng);
+	pCrap[2900] = 0;
+	qr.MakeQRWithText(pCrap, "hi_text.html");
+	*/
+
+	//Setup GUI, we're using Proton's GUI stuff
+
+	//setup background image
+	m_pBG = CreateOverlayEntity(GetApp()->GetEntityRoot(), "BG", "interface/bg.rttex", 0, 0);
+
+	//Add cart, and the camera image as a child of it
+
+	m_cartNormalPos = CL_Vec2f(1450, 511);
+	m_pCart = CreateOverlayEntity(m_pBG, "Cart", "interface/cart.rttex", m_cartNormalPos.x, m_cartNormalPos.y);
+	m_pCamEnt = CreateOverlayEntity(m_pCart, "Camera", "", 28, 163);
+
+	OverlayRenderComponent *pRender = (OverlayRenderComponent*)m_pCamEnt->GetComponentByName("OverlayRender");
+	pRender->SetSurface(&m_surf, false);
+	AddFocusIfNeeded(m_pBG);
+	SetSize2DEntity(m_pCamEnt, CL_Vec2f(GetApp()->m_captureSize));
+	EntitySetScaleBySize(m_pCamEnt, CL_Vec2f(381, 351), false);
+	CL_Vec2f vOriginalCamScale = GetScale2DEntity(m_pCamEnt);
+
+	//disable image capture for a bit so the anim is smoother
+	ScheduleCommand("stop_capture", 200);
+	ScheduleCommand("start_capture", 1200);
+
+	//anim effect
+	ZoomFromPositionEntity(m_pCart, CL_Vec2f(m_cartNormalPos.x, -300), 1200, INTERPOLATE_EASE_TO, 200);
+
+	
+	
+	m_pStatusEnt = CreateTextLabelEntity(m_pBG, "Status", GetScreenSizeXf() / 2, 200, "");
+	SetStatus("Insert cart");
+	SetScale2DEntity(m_pStatusEnt, CL_Vec2f(3, 3));
+	GetApp()->GetFont(FONT_SMALL)->SetSmoothing(false);
+	SetAlignmentEntity(m_pStatusEnt, ALIGNMENT_CENTER);
+
 	return true;
+}
+
+void ConsoleManager::SetStatus(string status)
+{
+	
+	SetTextEntity(m_pStatusEnt, "`b" + status + "``");
 }
 
 void ConsoleManager::KillEmulator()
 {
 	LogMsg("Killing emu...");
 	RunLinuxShell("pkill retroarch");
-}
-
-void ConsoleManager::DrawLoadingScreen()
-{
-	//Use this to prepare for raw GL calls
-	PrepareForGL();
-#ifdef _DEBUG
-	//LogMsg("Doing draw");
-#endif
-	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	CLEAR_GL_ERRORS() //honestly I don't know why I get a 0x0502 GL error when doing the FIRST gl action that requires a context with emscripten only
-
-					  //draw our game stuff
-					  //DrawFilledRect(10.0f,10.0f,GetScreenSizeXf()/3,GetScreenSizeYf()/3, MAKE_RGBA(255,255,0,255));
-					  //DrawFilledRect(0,0,64,64, MAKE_RGBA(0,255,0,100));
-
-					  //after our 2d rect call above, we need to prepare for raw GL again. (it keeps it in ortho mode if we don't for speed)
-		PrepareForGL();
-	
-
-	m_surf.Blit(0, 0);
-
-	string status = "Please wait, loading cart";
-	GetApp()->GetFont(FONT_SMALL)->DrawAligned(GetScreenSizeXf() / 2, GetScreenSizeYf() / 2, status, ALIGNMENT_CENTER, 4.0f);
-
-	//the base handles actually drawing the GUI stuff over everything else, if applicable, which in this case it isn't.
-	SetupOrtho();
 }
 
 void ConsoleManager::RunGame()
@@ -68,26 +135,24 @@ void ConsoleManager::RunGame()
 		KillEmulator();
 	}
 
-
-	DrawLoadingScreen();
-	ForceVideoUpdate();
-
-	//m_mode = APP_MODE_RUNNING;
-	string ret = RunLinuxShell("nohup /opt/retropie/supplementary/runcommand/runcommand.sh 0 _SYS_ atari2600 /home/pi/proton/RTPaperCart/bin/decoded_rom.a26 &");
-	LogMsg(ret.c_str());
+	SetStatus("`2Running cart``");
+	m_pauseCapture = true;
+	int loadingAnimMS = 3700;
+	 
+	ZoomToPositionEntity(m_pCart, CL_Vec2f(650,250), loadingAnimMS, INTERPOLATE_SMOOTHSTEP, 300);
+	ScheduleCommand("stop_capture", 0);
+	ScheduleCommand("start_capture", loadingAnimMS+300);
+	ScheduleCommand("stop_render", loadingAnimMS);
+	ScheduleCommand("run", 0);
+	GetApp()->GetOpenCV()->SetCaptureFPS(GetApp()->m_lostFocusFPS);
 	m_mode = APP_MODE_WAITING_FOR_EMULATOR;
-	LogMsg("Running game");
 
-}
-
-void ConsoleManager::RemoveMessage(int delayMS)
-{
-	m_removeMessageTimer = GetTick() + delayMS;
 }
 
 void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 {
 	uint32 romHash = HashString(pQRInfo->data.c_str(), (int32)pQRInfo->data.length());
+
 
 	if (romHash != m_loadedRomHash)
 	{
@@ -111,8 +176,7 @@ void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 				m_roms.push_back(pQRInfo->data);
 				m_multiPartHash = romHeader.hash;
 				
-				LogMsg("Please insert side B");
-				m_status = "Please insert side B";
+				SetStatus("`4Please insert side B``");
 				return;
 			}
 			else
@@ -120,10 +184,9 @@ void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 				//add this piece?
 				if (m_roms.empty())
 				{
-					m_status = "Insert side A first!";
+					SetStatus("`4Insert side A first!``");
 					m_loadedRomHash = 0;
-					RemoveMessage(1000);
-
+			
 					return;
 				}
 
@@ -139,9 +202,8 @@ void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 				{
 					//second piece, but for wrong rom!
 					LogMsg("Side B is for wrong game! %d is not %d", romHeader.hash, m_multiPartHash);
-					m_status = "Side B is for wrong game!";
+					SetStatus("`4Side B is for wrong game!``");
 					m_loadedRomHash = 0;
-					RemoveMessage(1000);
 					return;
 				}
 			}
@@ -152,10 +214,7 @@ void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 			m_roms.clear();
 			m_roms.push_back(pQRInfo->data);
 			m_multiPartHash = 0;
-			m_status.clear();
-
 		}
-		
 		
 		if (!GetApp()->GetRomUtils()->ConvertEncodedTextToRom(m_roms, "decoded_rom.a26"))
 		{
@@ -166,7 +225,7 @@ void ConsoleManager::OnLoadedRomFromQR(QRCodeInfo *pQRInfo)
 		m_roms.clear();
 		m_multiPartHash = 0;
 		RunGame();
-		m_status.clear();
+		
 	}
 	else
 	{
@@ -189,85 +248,75 @@ void ConsoleManager::OnNoCardInserted()
 	{
 		LogMsg("Killing emu because no card is inserted");
 		KillEmulator();
+
+		ZoomToPositionEntity(m_pCart, m_cartNormalPos, 1000, INTERPOLATE_SMOOTHSTEP, 0);
+		ScheduleCommand("stop_capture", 0);
+		ScheduleCommand("start_capture", 1000);
+		ScheduleCommand("start_render", 0);
+		GetApp()->GetOpenCV()->SetCaptureFPS(GetApp()->m_cameraFPS);
 		m_multiPartHash = 0;
 		m_mode = APP_MODE_RUNNING;
+		SetStatus("Insert cart");
 	}
 }
 
-void ConsoleManager::Draw()
-{
-
-	string status;
-
-
-	switch (m_mode)
-	{
-
-	case APP_MODE_WAITING_FOR_EMULATOR:
-		status = "(pretend retropie is active)";
-		break;
-
-	case APP_MODE_RUNNING:
-		status = "Please insert card";
-		if (!m_status.empty())
-		{
-			status = m_status;
-		}
-		break;
-	default:
-		status = "???";
-	}
-	if (GetApp()->GetOpenCV()->GetSoftSurface()->IsActive())
-	{
-
-		m_surf.InitFromSoftSurface(GetApp()->GetOpenCV()->GetSoftSurface());
-		m_surf.Bind();
-	}
-	   
-	m_surf.Blit(0, 0);
-	GetApp()->GetFont(FONT_SMALL)->SetSmoothing(false);
-	GetApp()->GetFont(FONT_SMALL)->DrawAligned(GetScreenSizeXf() / 2, GetScreenSizeYf() / 2, status, ALIGNMENT_CENTER, 3.0f);
-	
-
-}
 void ConsoleManager::Update()
 {
-	//game is thinking.  
-	if (m_removeMessageTimer != 0 && m_removeMessageTimer < GetTick())
-	{
-		m_removeMessageTimer = 0;
-		m_status = "";
-	}
-	const float maxComplexityConsideredToBeBlank = 7.0f;
+	
+	const float maxComplexityConsideredToBeBlank = 12.0f;
 	const CL_Vec2i vSampleSize = CL_Vec2i(50, 50);
+	bool bCardInserted = false;
 
+	
+	if (m_pauseCapture) return; //capturing disabled right now
+	
 	if (GetApp()->GetOpenCV()->ReadFromCamera())
 	{
 		GetApp()->GetOpenCV()->CopyLastFrameToSoftSurface();
+		
+		m_surf.InitFromSoftSurface(GetApp()->GetOpenCV()->GetSoftSurface());
+		m_surf.Bind();
+
+		SoftSurface *pSoftSurf = GetApp()->GetOpenCV()->GetSoftSurface();
+
+		CL_Vec2i vSampleStartPos = CL_Vec2i((pSoftSurf->GetWidth() - vSampleSize.x) / 2,
+			(pSoftSurf->GetHeight() - vSampleSize.y) / 2);
+		float complexity = pSoftSurf->GetAverageComplexityFromRect(vSampleStartPos, vSampleSize);
+		//LogMsg("Complexity is %.2f", complexity);
+
+		if (complexity >= maxComplexityConsideredToBeBlank)
+		{
+			bCardInserted = true;
+		}
+
+		if (!bCardInserted)
+		{
+			OnNoCardInserted();
+			return;
+		}
+		
+		if (m_mode == APP_MODE_WAITING_FOR_EMULATOR)
+		{
+			//don't actually read the QR code, it's too slow and can slow down the emu playing in another thread
+			return;
+		}
+
 		GetApp()->GetOpenCV()->DecodeQRCode();
 
 		if (GetApp()->GetOpenCV()->GetCountRead() > 0)
 		{
-
 			OnLoadedRomFromQR(GetApp()->GetOpenCV()->GetQRReadByIndex(0));
 
 		}
-		else
-		{
-			//no QR code detected.  If no card is even inserted, let's detect that and kill any running app
-
-			SoftSurface *pSoftSurf = GetApp()->GetOpenCV()->GetSoftSurface();
-
-			CL_Vec2i vSampleStartPos = CL_Vec2i( (pSoftSurf->GetWidth() - vSampleSize.x) / 2,
-				(pSoftSurf->GetHeight() - vSampleSize.y) / 2);
-			float complexity = pSoftSurf->GetAverageComplexityFromRect(vSampleStartPos, vSampleSize);
-			//LogMsg("Complexity is %.2f", complexity);
-
-			if (complexity < maxComplexityConsideredToBeBlank)
-			{
-				OnNoCardInserted();
-			}
-
-		}
+	
 	}
+	else
+	{
+		//LogMsg("Failed to read from camera");
+	}
+}
+
+bool ConsoleManager::ShouldDrawToScreen()
+{
+	return m_bAllowRenderingToScreen;
 }

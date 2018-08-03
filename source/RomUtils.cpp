@@ -33,7 +33,7 @@ bool RomUtils::ConvertEncodedTextToRom(vector<string> roms, string fileNameToWri
 {
 	int totalSize = 0;
 
-	for (int i = 0; i < roms.size(); i++)
+	for (int i = 0; i < (int)roms.size(); i++)
 	{
 		rtpack_header *pHeader = (rtpack_header*)roms[i].c_str();
 		totalSize += pHeader->decompressedSize;
@@ -43,7 +43,7 @@ bool RomUtils::ConvertEncodedTextToRom(vector<string> roms, string fileNameToWri
 
 	int curPos = 0;
 
-	for (int i = 0; i < roms.size(); i++)
+	for (int i = 0; i < (int)roms.size(); i++)
 	{
 		unsigned int decompressedSize;
 		byte *pDecompressedPiece = DecompressRTPackToMemory((byte*)roms[i].c_str(), &decompressedSize);

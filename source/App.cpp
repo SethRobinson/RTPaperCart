@@ -10,7 +10,6 @@
 #include "Entity/CustomInputComponent.h" //used for the back button (android)
 #include "Entity/FocusInputComponent.h" //needed to let the input component see input messages
 #include "Entity/ArcadeInputComponent.h" 
-//#include "util/TextScanner.h"
 
 MessageManager g_messageManager;
 MessageManager * GetMessageManager() {return &g_messageManager;}
@@ -42,8 +41,15 @@ App * GetApp()
 
 App::App()
 {
-	m_captureSize = CL_Vec2i(800, 800);
-	m_cameraFPS = 30;
+	m_captureSize = CL_Vec2i(1000, 1000);
+	m_cameraFPS = 15;
+	m_lostFocusFPS = 2;
+
+
+#ifdef WINAPI
+	//m_cameraFPS = 120;
+
+#endif
 
 	m_bDidPostInit = false;
 
@@ -56,7 +62,6 @@ App::App()
 App::~App()
 {
 }
-
 
 
 bool App::Init()
@@ -89,6 +94,7 @@ bool App::Init()
 				LogMsg("-w <capture width>\n");
 				LogMsg("-h <capture height>\n");
 				LogMsg("-fps <capture fps>\n");
+				LogMsg("-backgroundfps <background capture fps>\n");
 				LogMsg("-convert <filename to be converted to a QR code.  rtpack and html will be created\n\n");
 				exit(0);
 				return false;
@@ -106,6 +112,10 @@ bool App::Init()
 			if (parms[i] == "-fps")
 			{
 				m_cameraFPS = StringToInt(parms[i + 1]);
+			}
+			if (parms[i] == "-backgroundfps")
+			{
+				m_lostFocusFPS = StringToInt(parms[i + 1]);
 			}
 
 			if (parms[i] == "-contrast")
@@ -182,126 +192,6 @@ void App::OnExitApp(VariantList *pVarList)
 	GetBaseApp()->AddOSMessage(o);
 }
 
-#define kFilteringFactor 0.1f
-#define C_DELAY_BETWEEN_SHAKES_MS 500
-
-//testing accelerometer readings. To enable the test, search below for "ACCELTEST"
-//Note: You'll need to look at the  debug log to see the output. (For android, run PhoneLog.bat from RTPaperCart/android)
-void App::OnAccel(VariantList *pVList)
-{
-	
-	if ( int(pVList->m_variant[0].GetFloat()) != MESSAGE_TYPE_GUI_ACCELEROMETER) return;
-
-	CL_Vec3f v = pVList->m_variant[1].GetVector3();
-
-	LogMsg("Accel: %s", PrintVector3(v).c_str());
-
-	v.x = v.x * kFilteringFactor + v.x * (1.0f - kFilteringFactor);
-	v.y = v.y * kFilteringFactor + v.y * (1.0f - kFilteringFactor);
-	v.z = v.z * kFilteringFactor + v.z * (1.0f - kFilteringFactor);
-
-	// Compute values for the three axes of the acceleromater
-	float x = v.x - v.x;
-	float y = v.y - v.x;
-	float z = v.z - v.x;
-
-	//Compute the intensity of the current acceleration 
-	if (sqrt(x * x + y * y + z * z) > 2.0f)
-	{
-		Entity *pEnt = GetEntityRoot()->GetEntityByName("jumble");
-		if (pEnt)
-		{
-			//GetAudioManager()->Play("audio/click.wav");
-            VariantList vList(CL_Vec2f(), pEnt);
-			pEnt->GetFunction("OnButtonSelected")->sig_function(&vList);
-		}
-		LogMsg("Shake!");
-	}
-}
-
-
-//test for arcade keys.  To enable this test, search for TRACKBALL/ARCADETEST: below and uncomment the stuff under it.
-//Note: You'll need to look at the debug log to see the output.  (For android, run PhoneLog.bat from RTPaperCart/android)
-
-void App::OnArcadeInput(VariantList *pVList)
-{
-
-	int vKey = pVList->Get(0).GetUINT32();
-	eVirtualKeyInfo keyInfo = (eVirtualKeyInfo) pVList->Get(1).GetUINT32();
-	
-	string pressed;
-
-	switch (keyInfo)
-	{
-		case VIRTUAL_KEY_PRESS:
-			pressed = "pressed";
-			break;
-
-		case VIRTUAL_KEY_RELEASE:
-			pressed = "released";
-			break;
-
-		default:
-			LogMsg("OnArcadeInput> Bad value of %d", keyInfo);
-	}
-	
-
-	string keyName = "unknown";
-
-	switch (vKey)
-	{
-		case VIRTUAL_KEY_DIR_LEFT:
-			keyName = "Left";
-			break;
-
-		case VIRTUAL_KEY_DIR_RIGHT:
-			keyName = "Right";
-			break;
-
-		case VIRTUAL_KEY_DIR_UP:
-			keyName = "Up";
-			break;
-
-		case VIRTUAL_KEY_DIR_DOWN:
-			keyName = "Down";
-			break;
-
-	}
-	
-	LogMsg("Arcade input: Hit %d (%s) (%s)", vKey, keyName.c_str(), pressed.c_str());
-}
-
-
-void AppInput(VariantList *pVList)
-{
-
-	//0 = message type, 1 = parent coordinate offset, 2 is fingerID
-	eMessageType msgType = eMessageType( int(pVList->Get(0).GetFloat()));
-	CL_Vec2f pt = pVList->Get(1).GetVector2();
-	//pt += GetAlignmentOffset(*m_pSize2d, eAlignment(*m_pAlignment));
-
-	uint32 fingerID = 0;
-	if ( msgType != MESSAGE_TYPE_GUI_CHAR && pVList->Get(2).GetType() == Variant::TYPE_UINT32)
-	{
-		fingerID = pVList->Get(2).GetUINT32();
-	}
-
-	CL_Vec2f vLastTouchPt = GetBaseApp()->GetTouch(fingerID)->GetLastPos();
-
-	switch (msgType)
-	{
-	case MESSAGE_TYPE_GUI_CLICK_START:
-		LogMsg("Touch start: X: %.2f YL %.2f (Finger %d)", pt.x, pt.y, fingerID);
-		break;
-	case MESSAGE_TYPE_GUI_CLICK_MOVE:
-		LogMsg("Touch move: X: %.2f YL %.2f (Finger %d)", pt.x, pt.y, fingerID);
-		break;
-	case MESSAGE_TYPE_GUI_CLICK_END:
-		LogMsg("Touch end: X: %.2f YL %.2f (Finger %d)", pt.x, pt.y, fingerID);
-		break;
-	}	
-}
-
 string RunLinuxShell(string command)
 {
 
@@ -312,28 +202,9 @@ string RunLinuxShell(string command)
 #ifndef WINAPI
 
 	system(command.c_str());
-// 	
-// 	FILE *fpipe;
-// 
-// 	char line[256];
-// 
-// 	if (!(fpipe = (FILE*)popen(command.c_str(), "r")))
-// 	{  // If fpipe is NULL
-// 		return ("Problems with pipe, can't run shell");
-// 	}
-// 
-// 	while (fgets(line, sizeof(line), fpipe))
-// 	{
-// 		temp += string(line) + "\r";
-// 	}
-// 	pclose(fpipe);
-// 
-
 	return temp;
 
 #else
-	//GetApp()->m_gameServer.InitiateShutdown( (m_shutdownAfterCompile*1000*60)+1000);
-	//m_shutdownAfterCompile = -1;
 	return "Doesn't work in windows, can't run " + command;
 
 #endif
@@ -352,7 +223,9 @@ void App::Update()
 	{
 		//stuff I want loaded during the first "Update"
 		m_bDidPostInit = true;
-		
+
+		m_consoleManager.Init();
+	
 		//for android, so the back key (or escape on windows) will quit out of the game
 		Entity *pEnt = GetEntityRoot()->AddEntity(new Entity);
 		EntityComponent *pComp = pEnt->AddComponent(new CustomInputComponent);
@@ -364,43 +237,6 @@ void App::Update()
 		//nothing will happen unless we give it input focus
 		pEnt->AddComponent(new FocusInputComponent);
 
-		//ACCELTEST:  To test the accelerometer uncomment below: (will print values to the debug output)
-		//SetAccelerometerUpdateHz(25); //default is 0, disabled
-		//GetBaseApp()->m_sig_accel.connect(1, boost::bind(&App::OnAccel, this, _1));
-
-		//TRACKBALL/ARCADETEST: Uncomment below to see log messages on trackball/key movement input
-		pComp = pEnt->AddComponent(new ArcadeInputComponent);
-		GetBaseApp()->m_sig_arcade_input.connect(1, boost::bind(&App::OnArcadeInput, this, _1));
-	
-		//these arrow keys will be triggered by the keyboard, if applicable
-		AddKeyBinding(pComp, "Left", VIRTUAL_KEY_DIR_LEFT, VIRTUAL_KEY_DIR_LEFT);
-		AddKeyBinding(pComp, "Right", VIRTUAL_KEY_DIR_RIGHT, VIRTUAL_KEY_DIR_RIGHT);
-		AddKeyBinding(pComp, "Up", VIRTUAL_KEY_DIR_UP, VIRTUAL_KEY_DIR_UP);
-		AddKeyBinding(pComp, "Down", VIRTUAL_KEY_DIR_DOWN, VIRTUAL_KEY_DIR_DOWN);
-		AddKeyBinding(pComp, "Fire", VIRTUAL_KEY_CONTROL, VIRTUAL_KEY_GAME_FIRE);
-
-		//INPUT TEST - wire up input to some functions to manually handle.  AppInput will use LogMsg to
-		//send them to the log.  (Each device has a way to view a debug log in real-time)
-		GetBaseApp()->m_sig_input.connect(&AppInput);
-
-		/*
-		//file handling test, if TextScanner.h is included at the top..
-
-		TextScanner t;
-		t.m_lines.push_back("Testing 123");
-		t.m_lines.push_back("Heck yeah!");
-		t.m_lines.push_back("Whoopsopsop!");
-
-		LogMsg("Saving file...");
-		t.SaveFile("temp.txt");
-
-
-		TextScanner b;
-		b.LoadFile("temp.txt");
-		b.DumpToLog();
-		*/
-
-
 		m_openCV.SetCaptureFPS(m_cameraFPS);
 		m_openCV.SetCaptureSize(m_captureSize.x, m_captureSize.y);
 		
@@ -411,7 +247,6 @@ void App::Update()
 		m_openCV.InitCamera();
 	}
 
-
 	m_consoleManager.Update();
 
 }
@@ -419,15 +254,15 @@ void App::Update()
 void App::Draw()
 {
 
-#ifndef WINAPI
+
 	if (!m_consoleManager.ShouldDrawToScreen())
 	{
-
-		//on raspberry, we do nothing.  On windows, we'll do something slightly different as we don't really shell out to retropie
+		//presumable the game is running because we've shelled out, so we don't want to screw with the screen until we detect the catr
+		//has been removed or changed
 		return;
 	}
 
-#endif
+
 	//Use this to prepare for raw GL calls
 	PrepareForGL();
 #ifdef _DEBUG
@@ -437,22 +272,10 @@ void App::Draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	CLEAR_GL_ERRORS() //honestly I don't know why I get a 0x0502 GL error when doing the FIRST gl action that requires a context with emscripten only
 
-	//draw our game stuff
-	//DrawFilledRect(10.0f,10.0f,GetScreenSizeXf()/3,GetScreenSizeYf()/3, MAKE_RGBA(255,255,0,255));
-	//DrawFilledRect(0,0,64,64, MAKE_RGBA(0,255,0,100));
-
-	//after our 2d rect call above, we need to prepare for raw GL again. (it keeps it in ortho mode if we don't for speed)
-		PrepareForGL();
-	//RenderSpinningTriangle();
-//	RenderGLTriangle();
-	//let's blit a bmp, but first load it if needed
-
-	m_consoleManager.Draw();
-
-	//the base handles actually drawing the GUI stuff over everything else, if applicable, which in this case it isn't.
+					  //the base handles actually drawing the GUI stuff over everything else, if applicable, which in this case it isn't.
 	BaseApp::Draw();
-}
 
+}
 
 
 void App::OnScreenSizeChange()
@@ -473,7 +296,7 @@ void App::OnEnterForeground()
 	BaseApp::OnEnterForeground();
 }
 
-const char * GetAppName() {return "Paper VCS";}
+const char * GetAppName() {return "PaperCart";}
 
 //the stuff below is for android/webos builds.  Your app needs to be named like this.
 
@@ -498,9 +321,9 @@ bool App::OnPreInitVideo()
 	//extern these vars from main.cpp to change them...
 
 	//SetEmulatedPlatformID(PLATFORM_ID_WINDOWS);
-#if defined (_DEBUG) && defined(WINAPI)
-	SetupScreenInfo(1024, 768, ORIENTATION_DONT_CARE);
-#endif
+	
+	SetPrimaryScreenSize(1920, 1080);
+//	SetupScreenInfo(1920, 1080, ORIENTATION_DONT_CARE);
 
 
 	//g_winVideoScreenY = 768;

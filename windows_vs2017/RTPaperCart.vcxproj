@@ -418,7 +418,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\source;..\..\shared;..\..\shared\util\boost;..\..\shared\ClanLib-2.0\Sources;..\..\shared\win\include;..\..\shared\win\;C:\pro\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;C_GL_MODE;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_NO_DEBUG_HEAP=1;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;C_GL_MODE;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_NO_DEBUG_HEAP=1;_USE_32BIT_TIME_T;RT_RUNS_IN_BACKGROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -431,7 +431,7 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;zdll.lib;wsock32.lib;opencv_world342.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\shared\win\lib;C:\pro\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\shared\win\lib;C:\pro\opencv\build\x32\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)RTPaperCart.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -442,7 +442,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\source;..\..\shared;..\..\shared\util\boost;..\..\shared\ClanLib-2.0\Sources;..\..\shared\win\include;..\..\shared\win\;C:\pro\opencv\build\include;C:\pro\ZBarWin64\zbar\libiconv\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;C_GL_MODE;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_NO_DEBUG_HEAP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;C_GL_MODE;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_NO_DEBUG_HEAP=1;RT_RUNS_IN_BACKGROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -1046,11 +1046,31 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\shared\Entity\ArcadeInputComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\Button2DComponent.cpp" />
     <ClCompile Include="..\..\shared\Entity\Component.cpp" />
     <ClCompile Include="..\..\shared\Entity\CustomInputComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\EmitVirtualKeyComponent.cpp" />
     <ClCompile Include="..\..\shared\Entity\Entity.cpp" />
+    <ClCompile Include="..\..\shared\Entity\EntityUtils.cpp" />
+    <ClCompile Include="..\..\shared\Entity\FilterComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\FilterInputComponent.cpp" />
     <ClCompile Include="..\..\shared\Entity\FocusInputComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\FocusRenderComponent.cpp" />
     <ClCompile Include="..\..\shared\Entity\FocusUpdateComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\InputTextRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\InterpolateComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\OverlayRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\RectRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\RenderScissorComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\ScrollBarRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\ScrollComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\SelectButtonWithCustomInputComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\SliderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\TextBoxRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\TextRenderComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\TouchHandlerComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\TyperComponent.cpp" />
+    <ClCompile Include="..\..\shared\Entity\UnderlineRenderComponent.cpp" />
     <ClCompile Include="..\..\shared\FileSystem\FileManager.cpp" />
     <ClCompile Include="..\..\shared\FileSystem\FileSystem.cpp" />
     <ClCompile Include="..\..\shared\FileSystem\StreamingInstance.cpp" />
@@ -1569,11 +1589,30 @@
     <ClInclude Include="..\..\shared\ClanLib-2.0\Sources\API\Core\Text\string_data16.h" />
     <ClInclude Include="..\..\shared\ClanLib-2.0\Sources\API\Core\Text\string_ref16.h" />
     <ClInclude Include="..\..\shared\Entity\ArcadeInputComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\Button2DComponent.h" />
     <ClInclude Include="..\..\shared\Entity\Component.h" />
     <ClInclude Include="..\..\shared\Entity\CustomInputComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\EmitVirtualKeyComponent.h" />
     <ClInclude Include="..\..\shared\Entity\Entity.h" />
     <ClInclude Include="..\..\shared\Entity\EntityUtils.h" />
+    <ClInclude Include="..\..\shared\Entity\FilterComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\FilterInputComponent.h" />
     <ClInclude Include="..\..\shared\Entity\FocusInputComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\FocusRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\InputTextRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\InterpolateComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\OverlayRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\RectRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\RenderScissorComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\ScrollBarRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\ScrollComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\SelectButtonWithCustomInputComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\SliderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\TextBoxRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\TextRenderComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\TouchHandlerComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\TyperComponent.h" />
+    <ClInclude Include="..\..\shared\Entity\UnderlineRenderComponent.h" />
     <ClInclude Include="..\..\shared\FileSystem\FileManager.h" />
     <ClInclude Include="..\..\shared\FileSystem\FileSystem.h" />
     <ClInclude Include="..\..\shared\FileSystem\StreamingInstance.h" />

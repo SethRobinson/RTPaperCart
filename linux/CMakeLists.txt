@@ -21,8 +21,8 @@ project(RTPaperCart)
 include(../../shared/linux/Proton.cmake)
 #include(../source)
 
-proton_include_components(FocusInputComponent)
-proton_include_components(CustomInputComponent ArcadeInputComponent)
+#proton_include_components(FocusInputComponent)
+proton_include_all_components()
 
 set(APP "../source")
 proton_set_sources("${APP}/App.cpp" "${APP}/RomUtils.cpp" "${PROTON_MANAGER}/OpenCVManager.cpp" "${PROTON_NETWORK}/NetUtils.cpp")

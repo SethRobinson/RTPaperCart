@@ -25,29 +25,32 @@ public:
 	virtual ~ConsoleManager();
 	bool Init();
 	void KillEmulator();
-	void DrawLoadingScreen();
 	void RunGame();
-	void RemoveMessage(int delayMS);
 	void OnLoadedRomFromQR(QRCodeInfo *pQRInfo);
 	void OnNoCardInserted();
-	void Draw();
 	void Update();
 
-	bool ShouldDrawToScreen() { return m_mode == APP_MODE_RUNNING; }
-
-protected:
+	bool ShouldDrawToScreen();
 	
 
+	bool m_pauseCapture;
+	bool m_bAllowRenderingToScreen;
+
 private:
+
+	
+	void ScheduleCommand(string command, int delayBeforeActionMS);
+	void SetStatus(string status);
 
 	vector<string> m_roms;
 	eAppMode m_mode;
 	uint32 m_loadedRomHash;
 	unsigned int m_multiPartHash;
-	Surface m_surf; //for testing
-	string m_status;
-	unsigned int m_removeMessageTimer;
-
+	SurfaceAnim m_surf; //for testing
+	Entity *m_pCamEnt;
+	Entity *m_pBG, *m_pCart, *m_pStatusEnt;
+	CL_Vec2f m_cartNormalPos;
+	
 };
 
 #endif // ConsoleManager_h__#pragma once

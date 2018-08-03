@@ -37,6 +37,13 @@ public:
 	OpenCVManager * GetOpenCV() { return &m_openCV; }
 	RomUtils * GetRomUtils() { return &m_romUtils; }
 
+	CL_Vec2i m_captureSize;
+	ConsoleManager * GetConsoleManager() { return &m_consoleManager; }
+
+	int m_cameraFPS;
+	int m_lostFocusFPS;
+
+
 private:
 
 	
@@ -46,12 +53,11 @@ private:
 	unsigned int m_ignoreTimer;
 	ConsoleManager m_consoleManager;
 	
-	CL_Vec2i m_captureSize;
-	int m_cameraFPS;
 	int m_cameraBrightness;
 	int m_cameraSharpness;
 	int m_cameraContrast;
 	int m_cameraSaturation;
+	
 };
 
 

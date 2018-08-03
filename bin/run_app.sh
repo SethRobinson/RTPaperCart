@@ -1,1 +1,1 @@
-./RTPaperCart -w 1000 -h 1000 -fps 2
+./RTPaperCart -w 1000 -h 1000 -fps 15
