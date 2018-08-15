@@ -1,8 +1,3 @@
-echo You don't have to make media for this example, otherwise it will delete your bin/interface directory, but I want this on svn so it's easy to build this most simple example, even for
-echo people who don't have windows to make the font.
-
-pause
-
 REM Make fonts
 
 set PACK_EXE=..\..\.\shared\win\utils\RTPack.exe

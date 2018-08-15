@@ -69,12 +69,23 @@ bool ConsoleManager::Init()
 
 	//to test stuff
 	/*
-	LogMsg("testing");
+	{
+	LogMsg("Making a QR code from a text file");
 	QRGenerateManager qr;
 	unsigned int leng;
 	char *pCrap = (char*)LoadFileIntoMemoryBasic("alice.txt", &leng);
 	pCrap[2900] = 0;
 	qr.MakeQRWithText(pCrap, "hi_text.html");
+	}
+	*/
+
+	/*
+	//make a QR code from a string
+	{
+		LogMsg("Making a QR code from a string");
+		QRGenerateManager qr;
+		qr.MakeQRWithText("Jack Black was in a Pitfall commercial when he was a kid!", "hi_text.html", QrCode::Ecc::HIGH);
+	}
 	*/
 
 	//Setup GUI, we're using Proton's GUI stuff
