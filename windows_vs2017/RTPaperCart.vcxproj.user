@@ -6,7 +6,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug GL|x64'">
-    <LocalDebuggerCommandArguments>-w 640 -h 480</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>/? -w 640 -h 480</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

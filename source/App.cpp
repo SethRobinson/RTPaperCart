@@ -89,13 +89,19 @@ bool App::Init()
 		{
 			if (parms[i] == "?" || parms[i] == "/?" || parms[i] == "--h")
 			{
-			
-				LogMsg("Command line options:\n\n");
-				LogMsg("-w <capture width>\n");
-				LogMsg("-h <capture height>\n");
-				LogMsg("-fps <capture fps>\n");
-				LogMsg("-backgroundfps <background capture fps>\n");
-				LogMsg("-convert <filename to be converted to a QR code.  rtpack and html will be created\n\n");
+				string msg;
+
+				msg += "Command line options:\n\n";
+				msg += "-w <capture width>\n";
+				msg += "-h <capture height>\n";
+				msg += "-fps <capture fps>\n";
+				msg += "-backgroundfps <background capture fps>\n";
+				msg += "-convert <filename to be converted to a QR code.  rtpack and html will be created\n\n";
+#ifdef WINAPI
+				MessageBox(NULL, msg.c_str(),"Info", MB_OK);
+#else
+				LogMsg(msg.c_str());
+#endif
 				exit(0);
 				return false;
 			}
